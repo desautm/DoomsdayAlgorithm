@@ -1,0 +1,23 @@
+---
+title: "Le jour du jugement dernier"
+author: "Marc-André Désautels"
+date: "07/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  cache = TRUE
+)
+```
+
+# Amorce
+
+> Le Jugement dernier (ou Jour du Seigneur, ou encore Jugement universel) est, dans les religions abrahamiques, le jour où se manifestera aux hommes le jugement de Dieu sur leurs actes, leurs paroles et leurs intentions. *Source: [Wikipédia: Jugement dernier](https://www.wikiwand.com/fr/Jugement_dernier)*
+
+Rassurez-vous, nous ne parlerons pas de la fin des temps aujourd'hui mai plutôt d'un algorithme permettant de calculer le jour de la semaine à partir d'une date précise. L'algorithme porte plusieurs noms, **méthode des jours pivots**, **méthode du clavedi**, **méthode Conway**, mais nous lui préférons **algorithme du jour du Jugement dernier** (ça frappe davantage l'imagination!)
+
+## Calendrier juliens et calendrier grégoriens
+
+## Un peu d'histoire
