@@ -2,7 +2,9 @@
 title: "Le jour du jugement dernier"
 author: "Marc-André Désautels"
 date: "07/12/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,14 +12,221 @@ knitr::opts_chunk$set(
   echo = FALSE,
   cache = TRUE
 )
+
+library(tidyverse)
+library(kableExtra)
 ```
 
 # Amorce
 
 > Le Jugement dernier (ou Jour du Seigneur, ou encore Jugement universel) est, dans les religions abrahamiques, le jour où se manifestera aux hommes le jugement de Dieu sur leurs actes, leurs paroles et leurs intentions. *Source: [Wikipédia: Jugement dernier](https://www.wikiwand.com/fr/Jugement_dernier)*
 
-Rassurez-vous, nous ne parlerons pas de la fin des temps aujourd'hui mai plutôt d'un algorithme permettant de calculer le jour de la semaine à partir d'une date précise. L'algorithme porte plusieurs noms, **méthode des jours pivots**, **méthode du clavedi**, **méthode Conway**, mais nous lui préférons **algorithme du jour du Jugement dernier** (ça frappe davantage l'imagination!)
+Rassurez-vous, nous ne parlerons pas de la fin des temps aujourd'hui mais plutôt d'un algorithme permettant de calculer le jour de la semaine à partir d'une date précise. L'algorithme porte plusieurs noms, **méthode des jours pivots**, **méthode du clavedi**, **méthode Conway**, mais nous lui préférons **algorithme du jour du Jugement dernier** (ça frappe davantage l'imagination!)
 
 ## Calendrier juliens et calendrier grégoriens
 
 ## Un peu d'histoire
+
+
+## Les jours de la semaine
+
+Pour utiliser l'algorithme, nous devons numéroter les jours de la semaine. Nous utilisons les nombres de 0 à 6: 0 pour dimanche, 1 pour lundi, 2 pour mardi, 3 pour mercredi, 4 pour jeudi, 5 pour vendredi et 6 pour samedi. 
+
+```{r, weekdays_as_numbers}
+weekdays <- tribble(
+  ~ Jour, ~ Nombre,
+  "Dimanche", 0,
+  "Lundi", 1,
+  "Mardi", 2,
+  "Mercredi", 3,
+  "Jeudi", 4,
+  "Vendredi", 5,
+  "Samedi", 6
+) %>% 
+  rename('Jour de la semaine' = Jour)
+weekdays %>% 
+  kbl(booktabs = T) %>% 
+  kable_styling(position = "center")
+```
+
+Dans le calendrier grégorien, le cycle des dates et des jours de semaine se reproduit à l'identique tous les quatre siècles. 
+
+
+
+Le cycle des dates et des jours de semaine du calendrier grégorien se reproduit à l'identique tous les 4 siècles. Il suffit donc de retenir les rangs de jour clé correspondant aux restes de la division du rang de siècle par 4.
+
+## Modulo 7
+
+
+
+## L'algorithme
+
+Le principe de l'algorithme est qu'il existe un jour du jugement dernier pour chaque année. Un jour du jugement dernier est un jour où certaines dates précises du calendrier vont *toujours* être le même jour de la semaine. Donc, si nous connaissons le jour du jugement dernier pour plusieurs dates de l'année, il est possible de prendre la date la plus près de la date recherchée et de trouver le jour de la semaine qui nous intéresse.
+
+### La balise du siècle
+
+Pour être en mesure de trouver le jour du jugement dernier pour une année particulière, nous commençons par trouver la *balise du siècle*. Cette balise correspond à une journée particulière qui reste la même pour tout un siècle. 
+
+```{r, balise_century}
+balise_century <- tribble(
+  ~ Siècle, ~ Balise,
+  1600, 2,
+  1700, 0,
+  1800, 5,
+  1900, 3,
+  2000, 2,
+  2100, 0,
+  2200, 5,
+  2300, 3
+) 
+balise_century %>% 
+  kbl(booktabs = T, caption = "Un essai...") %>% 
+  kable_styling(position = "center")
+```
+
+Nous pouvons remarquer que la balise diminue de 2 modulo 7 pour chaque siècle à l'intérieur du cycle. Par contre, elle ne dominue que d'une unité lors d'une année multiple de 400. En effet, le cycle des dates et des jours de semaine du calendrier grégorien se reproduit à l'identique tous les 4 siècles.
+
+REMARQUE: ON PREND LES DEUX PREMIERS CHIFFRES DE L'ANNÉE MODULO 4 POUR TROUVER LA BALISE ET ON SE RAPPELLE DES QUATRE CAS...
+
+### Le jour du jugement dernier
+
+Une fois la balise du siècle trouvée, il faut trouver le jour du jugement dernier pour une année. Pour ce faire, on utilise la partie infraséculaire de l'année (les deux derniers chiffres de l'année), pour calculer le décalage entre la balise du siècle et le jour du jugement dernier. Nous pouvons ensuite additionner ce décalage à la balise du siècle (modulo 7 bien sûr), pour obtenir le jour du jugement dernier pour l'année.
+
+La table suivante présente les jours du jugement dernier pour les années allant de 1897 à 2105.
+
+```{r, doomsdays, message=FALSE}
+eleven_on_odd <- function(infrasecular){
+  temp <- infrasecular
+  if (temp %% 2 == 1) { temp <- temp + 11 }
+  temp = temp / 2
+  if (temp %% 2 == 1) { temp <- temp + 11 }
+  temp = -temp %% 7
+  return(temp)
+}
+
+doomsday <- function(year){
+  
+  century = floor(year/100)
+  infrasecular = year - 100*century
+  
+  century_mod_4 = century %% 4
+  if (century_mod_4 == 0) {century_rank = 2}
+  else if (century_mod_4 == 1) {century_rank = 0}
+  else if (century_mod_4 == 2) {century_rank = 5}
+  else {century_rank = 3}
+  
+  decalage <- eleven_on_odd(infrasecular)
+  
+  doomsday = (decalage + century_rank) %% 7
+  
+  return(doomsday)
+  
+}
+
+doomsdays_per_year <- function(start, end){
+  
+  dd_year <- matrix(0, nrow = 1, ncol = 7)
+  week <- dd_year
+  
+  old = doomsday(start)
+  dd_year[old+1] <- start
+  
+  row <- 1
+  for (year in seq(start+1,end,1)){
+    new = doomsday(year)
+    if (new < old) { 
+      dd_year <- rbind(dd_year, week)
+      row = row + 1
+    }
+    dd_year[row, new+1] = year
+    old <- new
+  }
+  
+  return(dd_year)
+  
+}
+
+doomsdays <- doomsdays_per_year(1897,2105) %>% 
+  as_tibble(.name_repair = "unique") %>% 
+  rename(Dimanche = ...1,
+         Lundi = ...2,
+         Mardi = ...3,
+         Mercredi = ...4,
+         Jeudi = ...5,
+         Vendredi = ...6,
+         Samedi = ...7) %>% 
+  mutate(
+    Dimanche = if_else(Dimanche == 0, "$\\rightarrow$", as.character(Dimanche)),
+    Lundi = if_else(Lundi == 0, "$\\rightarrow$", as.character(Lundi)),
+    Mardi = if_else(Mardi == 0, "$\\rightarrow$", as.character(Mardi)),
+    Mercredi = if_else(Mercredi == 0, "$\\rightarrow$", as.character(Mercredi)),
+    Jeudi = if_else(Jeudi == 0, "$\\rightarrow$", as.character(Jeudi)),
+    Vendredi = if_else(Vendredi == 0, "$\\rightarrow$", as.character(Vendredi)),
+    Samedi = if_else(Samedi == 0, "$\\rightarrow$", as.character(Samedi))
+  )
+doomsdays %>% 
+  kbl(booktabs = T, escape = F, 
+      caption = "Les jours du jugement dernier pour les années 1897 à 2105. Remarquons que cette table possède une période de 28 ans, sauf pour les années qui sont un multiple de 100 (par exemple 1900 et 2100 qui ne sont pas des années bissextiles) qui ne sont pas des multiples de 400 (comme l'année 2000 qui est une année bissextile).") %>% 
+  kable_styling(position = "center")
+```
+
+```{tikz, eleven-odd-flowchart}
+\usetikzlibrary{calc, shapes.geometric, arrows}
+\begin{tikzpicture}[node distance = 2.5cm]
+
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2cm, minimum height=1cm, text centered, draw=black, fill=blue!30, text width = 2cm]
+\tikzstyle{process} = [rectangle, minimum width=1.25cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=1.5cm, minimum height=0.5cm, text centered, draw=black, fill=green!30, text width = 1.25cm]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\node (in1) [io] {Entrée: Partie infraséculaire}; 
+\node (de1) [decision, below of =in1] {Pair ou Impair?};
+\node (pro1) [process, right of = de1, xshift = 1.5cm] {Additionner 11};
+\node (pro2) [process, below of = de1] {Diviser par 2};
+\node (de2) [decision, below of = pro2] {Pair ou Impair?};
+\node (pro3) [process, right of = de2, xshift = 1.5cm] {Additionner 11};
+\node (pro4) [process, below of = de2] {Diviser par 2};
+\node (pro5) [process, below of = pro4, yshift = 0.75cm] {Modulo 7};
+\node (pro6) [process, below of = pro5, yshift = 0.75cm] {Soustraire de 7};
+\node (in2) [io, below of = pro6, yshift = 0.75cm] {Sortie: Décalage}; 
+
+% \draw [arrow] (start) -- (in1);
+\draw [arrow] (in1) -- (de1);
+\draw [arrow] (de1) -- (pro1) node[midway, above, lightgray] {impair};
+\draw [arrow] (de1) -- (pro2) node[midway, left, lightgray] {pair};
+\draw [arrow] (pro1) |- ($(de1)!0.6!(pro2)$);
+\draw [arrow] (pro2) -- (de2);
+\draw [arrow] (de2) -- (pro3) node[midway, above, lightgray] {impair};
+\draw [arrow] (de2) -- (pro4) node[midway, left, lightgray] {pair};
+\draw [arrow] (pro3) |- ($(de2)!0.6!(pro4)$);
+\draw [arrow] (pro4) -- (pro5);
+\draw [arrow] (pro5) -- (pro6);
+\draw [arrow] (pro6) -- (in2);
+
+\end{tikzpicture}
+```
+
+
+### ALGO
+
+Appliquer l'algorithme implique trois étapes :
+
+1. Déterminer le jour 0 de l'année du siècle, que nous appelerons *balise de siècle*. Il existe un jour 0 pour le siècle 1800, un jour 0 pour le siècle 1900 et ainsi de suite.
+
+1. Calculer le décalage entre la *balise de sièle* et le jour clé de l'année en se basant sur les deux derniers chiffres de l'année (la partie *infraséculaire*). Ceci nous permet de déduire le jour clé de l'année.
+
+1. Choisir la date la plus proche parmi celles qui tombent sur un jour *pivot* et compter le nombre de jours modulo 7 entre cette date et la date recherchée pour toruver le jour de la semaine.
+
+
+Cette technique s'applique au calendrier grégorien et au calendrier julien, bien que leurs jours clés soient généralement différents pour une même année.
+
+
+
+
+
+
+
+
+
+
