@@ -1,4 +1,6 @@
 library(tidyverse)
+library(lubridate)
+library(glue)
 
 eleven_on_odd <- function(infrasecular){
   temp <- infrasecular
@@ -112,7 +114,62 @@ balise_century <- tribble(
   2300, 3
 )
 
+weekday_name <- function(weekday) {
+  
+  if (weekday == 0) {name <- "Dimanche"}
+  else if (weekday == 1) {name <- "Lundi"}
+  else if (weekday == 2) {name <- "Mardi"}
+  else if (weekday == 3) {name <- "Mercredi"}
+  else if (weekday == 4) {name <- "Jeudi"}
+  else if (weekday == 5) {name <- "Vendredi"}
+  else if (weekday == 6) {name <- "Samedi"}
+  
+  return(name)
+  
+}
 
+weekday <- function(my_date) {
+  
+  my_year <- year(my_date)
+  my_month <- month(my_date)
+  my_day <- day(my_date)
+  
+  my_doomsday <- doomsday(my_year)
+  
+  if (my_month == 0) {
+    
+  } else if (my_month == 1) {
+    
+  } else if (my_month == 2) {
+    
+  } else if (my_month == 3) {
+    decalage <- (my_day - 0) %% 7
+  } else if (my_month == 4) {
+    decalage <- (my_day - 4) %% 7
+  } else if (my_month == 5) {
+    decalage <- (my_day - 9) %% 7
+  } else if (my_month == 6) {
+    decalage <- (my_day - 6) %% 7
+  } else if (my_month == 7) {
+    decalage <- (my_day - 11) %% 7
+  } else if (my_month == 8) {
+    decalage <- (my_day - 8) %% 7
+  } else if (my_month == 9) {
+    decalage <- (my_day - 5) %% 7
+  } else if (my_month == 10) {
+    decalage <- (my_day - 10) %% 7
+  } else if (my_month == 11) {
+    decalage <- (my_day - 7) %% 7
+  } else if (my_month == 12) {
+    decalage <- (my_day - 12) %% 7
+  }
+  
+  weekday <- (my_doomsday + decalage) %% 7
+  name <- weekday_name(weekday)
+  
+  return(glue("Le {my_day} {my_month} {my_year} est un {name}"))
+  
+}
 
 
 

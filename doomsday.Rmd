@@ -3,8 +3,8 @@ title: "Le jour du jugement dernier"
 author: "Marc-André Désautels"
 date: "07/12/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,23 +14,26 @@ knitr::opts_chunk$set(
 )
 
 library(tidyverse)
+library(lubridate)
 library(kableExtra)
+
+# devtools::install_github("desautm/doomsday")
+library(doomsday)
 ```
 
 # Amorce
 
 > Le Jugement dernier (ou Jour du Seigneur, ou encore Jugement universel) est, dans les religions abrahamiques, le jour où se manifestera aux hommes le jugement de Dieu sur leurs actes, leurs paroles et leurs intentions. *Source: [Wikipédia: Jugement dernier](https://www.wikiwand.com/fr/Jugement_dernier)*
 
-Rassurez-vous, nous ne parlerons pas de la fin des temps aujourd'hui mais plutôt d'un algorithme permettant de calculer le jour de la semaine à partir d'une date précise. L'algorithme porte plusieurs noms, **méthode des jours pivots**, **méthode du clavedi**, **méthode Conway**, mais nous lui préférons **algorithme du jour du Jugement dernier** (ça frappe davantage l'imagination!)
+Rassurez-vous, nous ne parlerons pas de la fin des temps aujourd'hui mais plutôt d'un algorithme permettant de calculer (mentalement avec un peu de pratique) le jour de la semaine à partir d'une date précise. Par exemple, imaginez que vous me croisez dans la rue et que vous êtes capable de dire que le jour de ma naissance, le `r pretty_date(ymd(19780702))` est un `r find_weekday(ymd(19780702), as_a_number = FALSE)`. Ou alors que la journée du décès de Carl Friedrich Gauss, le `r pretty_date(ymd(18550223))` est un `r find_weekday(ymd(18550223), as_a_number = FALSE)`.
 
-## Calendrier juliens et calendrier grégoriens
+L'algorithme porte plusieurs noms, **méthode des jours pivots**, **méthode du clavedi**, **méthode Conway**, mais nous lui préférons **algorithme du jour du Jugement dernier** (ça frappe davantage l'imagination!).
 
-## Un peu d'histoire
+## Comment calculer mentalement le jour de la semaine pour n'importe quelle date
 
+### Étape 1 : Les jours de la semaine comme des nombres
 
-## Les jours de la semaine
-
-Pour utiliser l'algorithme, nous devons numéroter les jours de la semaine. Nous utilisons les nombres de 0 à 6: 0 pour dimanche, 1 pour lundi, 2 pour mardi, 3 pour mercredi, 4 pour jeudi, 5 pour vendredi et 6 pour samedi. 
+Pour utiliser l'algorithme, nous devons numéroter les jours de la semaine. Nous utilisons les nombres de 0 à 6: 0 pour dimanche, 1 pour lundi, 2 pour mardi, 3 pour mercredi, 4 pour jeudi, 5 pour vendredi et 6 pour samedi. Puisque nous ferons certains calculs mentaux pour calculer un jour de la semaine, il est plus facile d'y arriver en associant des nombres aux jours de la semaine.
 
 ```{r, weekdays_as_numbers}
 weekdays <- tribble(
@@ -49,6 +52,64 @@ weekdays %>%
   kable_styling(position = "center")
 ```
 
+### Étape 2 : Mémoriser les balises de siècles
+
+Pour être en mesure de trouver le jour du jugement dernier pour une année particulière, nous commençons par trouver la *balise du siècle*. Cette balise correspond à une journée particulière qui reste la même pour tout un siècle. 
+
+Les calendriers se répètent tous les 400 ans. Vous n'avez donc qu'à mémoriser les balises de siècles pour 4 siècles. 
+
+> La plupart des dates que vous rencontrerez se trouveront entre 1800 et 2100, ces balises de siècles sont donc les plus importantes à se rappeler.
+
+```{r, balise_century}
+balise_century <- tribble(
+  ~ Siècle, ~ Balise, ~ "Jour de la semaine",
+  1800, 5, "Vendredi",
+  1900, 3, "Mercredi",
+  2000, 2, "Mardi",
+  2100, 0, "Dimanche"
+) 
+balise_century %>% 
+  kbl(booktabs = T) %>% 
+  kable_styling(position = "center")
+```
+
+Les dates se trouvant à l'extérieur de cette période peuvent être trouvée en utilisant le cycle de 400 ans. Par exemple, la balise du siècle 1700 est un *Dimanche* et la balise du siècle 2200 est un *Vendredi*.
+
+### Étape 3 : Mémoriser les jours pivots
+
+Les jours pivots d'une année sont des jours qui correspondent tous au même jour de la semaine à l'intérieur d'une année. Par exemple, saviez-vous que le jour de  l'halloween est **toujours** le même jour de la semaine que le 4 juillet, la fête de l'Indépendance américaine?
+
+Certains jours pivots sont très faciles à mémoriser:
+
+- 4/4 : 4 avril;
+- 6/6 : 6 juin;
+- 8/8 : 8 août; 
+- 10/10 : 10 octobre;
+- 12/12 : 12 décembre;
+
+D'autres par contre demandent un effort supplémentaire...
+
+- Le 4 janvier les années bissextiles, le 3 janvier les années communes;
+- 0/3 : 0 mars, le dernier jour de février;
+- 9/5 et 5/9 : 9 mai et 5 septembre;
+- 11/7 et 7/11 : 11 juillet et 7 novembre
+
+> Pour se rappeler les jours des mois impairs de mai à novembre, John Conway suggère la phrase : "Je travaille de 9 heures à 5 heures au Seven Eleven."
+
+
+
+
+
+
+## Calendrier juliens et calendrier grégoriens
+
+## Un peu d'histoire
+
+
+## Les jours de la semaine
+
+
+
 Dans le calendrier grégorien, le cycle des dates et des jours de semaine se reproduit à l'identique tous les quatre siècles. 
 
 
@@ -63,30 +124,12 @@ Le cycle des dates et des jours de semaine du calendrier grégorien se reproduit
 
 Le principe de l'algorithme est qu'il existe un jour du jugement dernier pour chaque année. Un jour du jugement dernier est un jour où certaines dates précises du calendrier vont *toujours* être le même jour de la semaine. Donc, si nous connaissons le jour du jugement dernier pour plusieurs dates de l'année, il est possible de prendre la date la plus près de la date recherchée et de trouver le jour de la semaine qui nous intéresse.
 
-### La balise du siècle
-
-Pour être en mesure de trouver le jour du jugement dernier pour une année particulière, nous commençons par trouver la *balise du siècle*. Cette balise correspond à une journée particulière qui reste la même pour tout un siècle. 
-
-```{r, balise_century}
-balise_century <- tribble(
-  ~ Siècle, ~ Balise,
-  1600, 2,
-  1700, 0,
-  1800, 5,
-  1900, 3,
-  2000, 2,
-  2100, 0,
-  2200, 5,
-  2300, 3
-) 
-balise_century %>% 
-  kbl(booktabs = T, caption = "Un essai...") %>% 
-  kable_styling(position = "center")
-```
 
 Nous pouvons remarquer que la balise diminue de 2 modulo 7 pour chaque siècle à l'intérieur du cycle. Par contre, elle ne dominue que d'une unité lors d'une année multiple de 400. En effet, le cycle des dates et des jours de semaine du calendrier grégorien se reproduit à l'identique tous les 4 siècles.
 
 REMARQUE: ON PREND LES DEUX PREMIERS CHIFFRES DE L'ANNÉE MODULO 4 POUR TROUVER LA BALISE ET ON SE RAPPELLE DES QUATRE CAS...
+
+Une fois connu le jour du jugement dernier pour une année, nous savons maintenant que **tous** les jours pivots de l'année seront tous le même jour de la semaine celui du jour du jugement dernier. Certains jours pivots sont très faciles à mémoriser:
 
 ### Le jour du jugement dernier
 
@@ -95,66 +138,7 @@ Une fois la balise du siècle trouvée, il faut trouver le jour du jugement dern
 La table suivante présente les jours du jugement dernier pour les années allant de 1897 à 2105.
 
 ```{r, doomsdays, message=FALSE}
-eleven_on_odd <- function(infrasecular){
-  temp <- infrasecular
-  if (temp %% 2 == 1) { temp <- temp + 11 }
-  temp = temp / 2
-  if (temp %% 2 == 1) { temp <- temp + 11 }
-  temp = -temp %% 7
-  return(temp)
-}
-
-doomsday <- function(year){
-  
-  century = floor(year/100)
-  infrasecular = year - 100*century
-  
-  century_mod_4 = century %% 4
-  if (century_mod_4 == 0) {century_rank = 2}
-  else if (century_mod_4 == 1) {century_rank = 0}
-  else if (century_mod_4 == 2) {century_rank = 5}
-  else {century_rank = 3}
-  
-  decalage <- eleven_on_odd(infrasecular)
-  
-  doomsday = (decalage + century_rank) %% 7
-  
-  return(doomsday)
-  
-}
-
-doomsdays_per_year <- function(start, end){
-  
-  dd_year <- matrix(0, nrow = 1, ncol = 7)
-  week <- dd_year
-  
-  old = doomsday(start)
-  dd_year[old+1] <- start
-  
-  row <- 1
-  for (year in seq(start+1,end,1)){
-    new = doomsday(year)
-    if (new < old) { 
-      dd_year <- rbind(dd_year, week)
-      row = row + 1
-    }
-    dd_year[row, new+1] = year
-    old <- new
-  }
-  
-  return(dd_year)
-  
-}
-
-doomsdays <- doomsdays_per_year(1897,2105) %>% 
-  as_tibble(.name_repair = "unique") %>% 
-  rename(Dimanche = ...1,
-         Lundi = ...2,
-         Mardi = ...3,
-         Mercredi = ...4,
-         Jeudi = ...5,
-         Vendredi = ...6,
-         Samedi = ...7) %>% 
+doomsdays <- doomsdays_df(1897,2105) %>% 
   mutate(
     Dimanche = if_else(Dimanche == 0, "$\\rightarrow$", as.character(Dimanche)),
     Lundi = if_else(Lundi == 0, "$\\rightarrow$", as.character(Lundi)),
@@ -170,7 +154,29 @@ doomsdays %>%
   kable_styling(position = "center")
 ```
 
-```{tikz, eleven-odd-flowchart}
+Pour trouver les jours du jugement dernier dans la table précédente, nous utilisons la balise du siècle énoncée précédemment et le décalage de l'année choisie. On débute en décomposant notre année $A=S+X$ où $0\leq X < 100$. Nous avons donc que $S$ correspond au siècle et $X$ à la partie infraséculaire. Par exemple, si nous prenons l'année 2022, nous pouvons la séparer $2022=2000 + 22$ avec 22 la partie infraséculaire de l'année.
+
+Il existe plusieurs manières d'utiliser la partie infraséculaire pour trouver le décalage. Nous choisissons de montrer la méthode *11 sur impair* qui s'adapte très bien au calcul mental. Nous cherchons à trouver $D$ le décalage. La méthode est la suivante:
+
+1. Posons $D$ la partie infraséculaire de l'année;
+1. Si $D$ est impair, on lui additionne 11, donc $D=D+11$;
+1. Divisons $D$ par 2 : $D = D/2$;
+1. Si $D$ est impair, on lui additionne 11, donc $D=D+11$;
+1. Trouvons le reste de la division de $D$ par 7, donc $D = D \mod 7$;
+1. Nous trouvons la différence de 7 avec $D$, donc $D = 7-D$.
+
+En utilisant l'exemple de l'année 2022:
+
+1. $D=22$;
+1. $D$ est pair, on ne fait rien;
+1. $D = \frac{D}{2}=\frac{22}{2}=11$;
+1. $D$ est impair, $D=D+11=11+11=22$;
+1. $D = D \mod 7 = 22 \mod 7 = 1$;
+1. $D = 7-D =  7 - 1 = 6$.
+
+Le décalage de l'année 2022 est donc de 6. Puisque la balise du siècle 2000 est 2, nous avons que le jour du jugement dernier est donné par l'addition de la balise et du décalage modulo 7 et donc $(2+6) \mod 7 = 1$. Le résultat donnant 1, ça correspond au lundi. Nous savons donc que le jour du jugement dernier pour l'année 2022 est le lundi. 
+
+```{tikz, eleven-odd-flowchart, fig.align = "center"}
 \usetikzlibrary{calc, shapes.geometric, arrows}
 \begin{tikzpicture}[node distance = 2.5cm]
 
@@ -207,6 +213,24 @@ doomsdays %>%
 \end{tikzpicture}
 ```
 
+### Les jours pivots de l'année
+
+Une fois connu le jour du jugement dernier pour une année, nous savons maintenant que **tous** les jours pivots de l'année seront tous le même jour de la semaine celui du jour du jugement dernier. Certains jours pivots sont très faciles à mémoriser:
+
+- 4/4 : 4 avril;
+- 6/6 : 6 juin;
+- 8/8 : 8 août; 
+- 10/10 : 10 octobre;
+- 12/12 : 12 décembre;
+
+D'autres par contre demandent un effort supplémentaire...
+
+- Le 4 janvier les années bissextiles, le 3 janvier les années communes;
+- 0/3 : 0 mars, le dernier jour de février;
+- 9/5 et 5/9 : 9 mai et 5 septembre;
+- 11/7 et 7/11 : 11 juillet et 7 novembre
+
+> Pour se rappeler les jours des mois impairs de mai à novembre, John Conway suggère la phrase : "Je travaille de 9 heures à 5 heures au Seven Eleven."
 
 ### ALGO
 
